@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#6F4E37">
+    <title>Coffee Cart Attendance</title>
+    <link rel="manifest" id="manifest-placeholder">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%236F4E37'/%3E%3Ctext x='50' y='70' font-size='60' text-anchor='middle' fill='white'%3E☕%3C/text%3E%3C/svg%3E">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #6F4E37 0%, #3E2723 100%);
+            min-height: 100vh;
+            color: #333;
+            overflow-x: hidden;
+        }
+
+        .app-container {
+            max-width: 500px;
+            margin: 0 auto;
+            min-height: 100vh;
+            background: #f5f5f5;
+            position: relative;
+            box-shadow: 0 0 30px rgba(0,0,0,0.3);
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #6F4E37 0%, #5D4037 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 1.5em;
+            margin-bottom: 5px;
+        }
+
+        .header .subtitle {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .menu-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            font-size: 1.5em;
+            padding: 8px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        /* Screens */
+        .screen {
+            display: none;
+            padding: 20px;
+            min-height: calc(100vh - 100px);
+        }
+
+        .screen.active {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #5D4037;
+        }
+
+        .form-group label .required {
+            color: #d32f2f;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 1em;
+            background: white;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #6F4E37;
+        }
+
+        /* Checkbox List */
+        .checkbox-list {
+            background: white;
+            border-radius: 15px;
+            padding: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .checkbox-item:last-child {
+            border-bottom: none;
+        }
+
+        .checkbox-item:active {
+            background: #f5f5f5;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            width: 24px;
+            height: 24px;
+            margin-right: 15px;
+            cursor: pointer;
+            accent-color: #6F4E37;
+        }
+
+        .checkbox-item label {
+            flex: 1;
+            font-size: 1.05em;
+            cursor: pointer;
+        }
+
+        /* Buttons */
+        .btn {
+            width: 100%;
+            padding: 18px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #6F4E37 0%, #5D4037 100%);
+            color: white;
+        }
+
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #d32f2f 0%, #c62828 100%);
+            color: white;
+            margin-top: 10px;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Menu Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+            animation: fadeIn 0.3s;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 400px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #6F4E37 0%, #5D4037 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 20px 20px 0 0;
+            position: relative;
+        }
+
+        .modal-header h2 {
+            font-size: 1.3em;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            font-size: 1.5em;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .menu-item {
+            padding: 18px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 1.1em;
+            transition: background 0.2s;
+        }
+
+        .menu-item:last-child {
+            border-bottom: none;
+        }
+
+        .menu-item:active {
+            background: #f5f5f5;
+        }
+
+        /* Settings Tabs */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 12px;
+            background: #f0f0f0;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            background: #6F4E37;
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Item List (Settings) */
+        .item-list {
+            background: white;
+            border-radius: 12px;
+            padding: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .item-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .item-row:last-child {
+            border-bottom: none;
+        }
+
+        .item-row button {
+            background: #d32f2f;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+
+        .add-item-form {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .add-item-form input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+        }
+
+        .add-item-form button {
+            background: #6F4E37;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        /* Status Badge */
+        .status-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .status-badge.logged-in {
+            background: #c8e6c9;
+            color: #2e7d32;
+        }
+
+        .status-badge.logged-out {
+            background: #ffcdd2;
+            color: #c62828;
+        }
+
+        /* Timer Display */
+        .timer-display {
+            text-align: center;
+            margin: 20px 0;
+            padding: 20px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .timer-display .time {
+            font-size: 2em;
+            font-weight: bold;
+            color: #6F4E37;
+        }
+
+        .timer-display .label {
+            color: #666;
+            margin-top: 5px;
+        }
+
+        /* Select Dropdown */
+        select {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 1em;
+            background: white;
+            cursor: pointer;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #6F4E37;
+        }
+
+        /* Info Box */
+        .info-box {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 0.95em;
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #6F4E37;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="header">
+            <h1>☕ Coffee Cart Attendance</h1>
+            <p class="subtitle">Barista Tracking System</p>
+            <button class="menu-btn" onclick="openMenu()" id="menuBtn" style="display: none;">☰</button>
+        </div>
+
+        <!-- SCREEN 1: Initial Login -->
+        <div class="screen active" id="initialLoginScreen">
+            <h2 style="color: #5D4037; margin-bottom: 20px;">🔐 Start Your Shift</h2>
+            
+            <form id="initialLoginForm">
+                <div class="form-group">
+                    <label>Barista Name <span class="required">*</span></label>
+                    <input type="text" id="baristaName" required placeholder="Enter your name">
+                </div>
+
+                <div class="form-group">
+                    <label>Coffee Grinder Number <span class="required">*</span></label>
+                    <input type="text" id="grinderNumberLogin" required placeholder="Number on grinder machine">
+                </div>
+
+                <button type="submit" class="btn btn-primary">Continue →</button>
+            </form>
+        </div>
+
+        <!-- SCREEN 2: Initial Inventory Check -->
+        <div class="screen" id="inventoryCheckScreen">
+            <h2 style="color: #5D4037; margin-bottom: 10px;">📦 Check Stock Availability</h2>
+            <p style="color: #666; margin-bottom: 20px;">Check all items before starting shift</p>
+
+            <form id="inventoryForm">
+                <div class="checkbox-list" id="inventoryList">
+                    <!-- Will be populated dynamically -->
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="margin-top: 20px;">
+                    ✅ Login & Start Shift
+                </button>
+            </form>
+        </div>
+
+        <!-- SCREEN 3: Dashboard (Active Shift) -->
+        <div class="screen" id="dashboardScreen">
+            <div class="status-badge logged-in">✅ Shift Active</div>
+
+            <div class="timer-display">
+                <div class="time" id="shiftTimer">00:00:00</div>
+                <div class="label">Shift Duration</div>
+            </div>
+
+            <div class="info-box">
+                <strong>📱 Reminder Active</strong><br>
+                You'll receive notifications every <span id="reminderIntervalDisplay">2</span> hour(s) to check inventory.
+            </div>
+
+            <div style="background: white; padding: 20px; border-radius: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                <p><strong>Barista:</strong> <span id="dashboardName"></span></p>
+                <p><strong>Grinder #:</strong> <span id="dashboardGrinder"></span></p>
+                <p><strong>Login Time:</strong> <span id="dashboardLoginTime"></span></p>
+            </div>
+        </div>
+
+        <!-- SCREEN 4: Periodic Inventory Check -->
+        <div class="screen" id="periodicCheckScreen">
+            <h2 style="color: #5D4037; margin-bottom: 10px;">⏰ Inventory Check</h2>
+            <p style="color: #666; margin-bottom: 20px;">Check current stock levels</p>
+
+            <form id="periodicCheckForm">
+                <div class="checkbox-list" id="periodicInventoryList">
+                    <!-- Will be populated dynamically -->
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="margin-top: 20px;">
+                    ✅ Confirm & Return
+                </button>
+            </form>
+        </div>
+
+        <!-- SCREEN 5: Logout -->
+        <div class="screen" id="logoutScreen">
+            <h2 style="color: #5D4037; margin-bottom: 20px;">👋 End Your Shift</h2>
+
+            <div class="info-box">
+                Confirming grinder number for security
+            </div>
+
+            <form id="logoutForm">
+                <div class="form-group">
+                    <label>Coffee Grinder Number <span class="required">*</span></label>
+                    <input type="text" id="grinderNumberLogout" required placeholder="Enter grinder number">
+                </div>
+
+                <button type="submit" class="btn btn-danger">
+                    🚪 Logout & End Shift
+                </button>
+
+                <button type="button" class="btn btn-primary" onclick="showScreen('dashboardScreen')">
+                    ← Back to Dashboard
+                </button>
+            </form>
+        </div>
+
+        <!-- SCREEN 6: Settings -->
+        <div class="screen" id="settingsScreen">
+            <h2 style="color: #5D4037; margin-bottom: 20px;">⚙️ Settings</h2>
+
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('items')">Inventory Items</button>
+                <button class="tab" onclick="switchTab('reminder')">Reminder Time</button>
+            </div>
+
+            <!-- Items Tab -->
+            <div class="tab-content active" id="itemsTab">
+                <h3 style="margin-bottom: 15px; color: #5D4037;">Manage Items</h3>
+                <div class="item-list" id="itemsList">
+                    <!-- Will be populated dynamically -->
+                </div>
+                <div class="add-item-form">
+                    <input type="text" id="newItemInput" placeholder="Add new item...">
+                    <button onclick="addNewItem()">+ Add</button>
+                </div>
+            </div>
+
+            <!-- Reminder Tab -->
+            <div class="tab-content" id="reminderTab">
+                <h3 style="margin-bottom: 15px; color: #5D4037;">Reminder Interval</h3>
+                <div class="form-group">
+                    <label>Check inventory every:</label>
+                    <select id="reminderInterval" onchange="updateReminderInterval()">
+                        <option value="1">1 Hour</option>
+                        <option value="2" selected>2 Hours</option>
+                        <option value="3">3 Hours</option>
+                    </select>
+                </div>
+            </div>
+
+            <button class="btn btn-primary" onclick="showScreen('dashboardScreen')" style="margin-top: 20px;">
+                ← Back to Dashboard
+            </button>
+        </div>
+    </div>
+
+    <!-- Menu Modal -->
+    <div class="modal" id="menuModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Menu</h2>
+                <button class="close-btn" onclick="closeMenu()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="menu-item" onclick="openSettings()">
+                    <span>⚙️</span>
+                    <span>Settings</span>
+                </div>
+                <div class="menu-item" onclick="initiateLogout()">
+                    <span>🚪</span>
+                    <span>Logout</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration & State
+        const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbxL6lGhxYdQqNb9mm-ubHKgDcYSBuRtH6F57Rqsf8PDlQQ7WX5cl1ah74rVIYTKle5h/exec'; // Will be replaced with actual backend
+        
+        let appState = {
+            isLoggedIn: false,
+            baristaName: '',
+            grinderNumber: '',
+            loginTime: null,
+            inventoryItems: [
+                'Water',
+                'Regular Milk',
+                'Oat Milk',
+                'Coffee Beans',
+                'Cocoa Powder',
+                'Whipped Cream Bottles',
+                'Marshmallows',
+                'Coffee Cups',
+                'Spoons',
+                'Coffee Lids',
+                'Tea Sachets'
+            ],
+            reminderInterval: 2, // hours
+            reminderTimer: null,
+            shiftTimer: null
+        };
+
+        // Load state from localStorage
+        function loadState() {
+            const saved = localStorage.getItem('coffeeCartState');
+            if (saved) {
+                const loaded = JSON.parse(saved);
+                appState = { ...appState, ...loaded };
+                
+                // Restore timers if logged in
+                if (appState.isLoggedIn) {
+                    showScreen('dashboardScreen');
+                    document.getElementById('menuBtn').style.display = 'block';
+                    updateDashboard();
+                    startShiftTimer();
+                    startReminderTimer();
+                }
+            }
+        }
+
+        // Save state to localStorage
+        function saveState() {
+            // Don't save timers
+            const toSave = { ...appState };
+            delete toSave.reminderTimer;
+            delete toSave.shiftTimer;
+            localStorage.setItem('coffeeCartState', JSON.stringify(toSave));
+        }
+
+        // Screen Management
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        // Initial Login Form
+        document.getElementById('initialLoginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            appState.baristaName = document.getElementById('baristaName').value.trim();
+            appState.grinderNumber = document.getElementById('grinderNumberLogin').value.trim();
+            
+            renderInventoryChecklist();
+            showScreen('inventoryCheckScreen');
+        });
+
+        // Render Inventory Checklist
+        function renderInventoryChecklist(containerId = 'inventoryList') {
+            const container = document.getElementById(containerId);
+            container.innerHTML = appState.inventoryItems.map((item, index) => `
+                <div class="checkbox-item">
+                    <input type="checkbox" id="item_${index}" required>
+                    <label for="item_${index}">${item}</label>
+                </div>
+            `).join('');
+        }
+
+        // Inventory Form Submission
+        document.getElementById('inventoryForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Collect inventory data
+            const inventoryData = {};
+            appState.inventoryItems.forEach((item, index) => {
+                inventoryData[item] = document.getElementById(`item_${index}`).checked;
+            });
+            
+            // Complete login
+            appState.isLoggedIn = true;
+            appState.loginTime = new Date().toISOString();
+            saveState();
+            
+            // Send login data to backend
+            sendToBackend('LOGIN', {
+                barista: appState.baristaName,
+                grinderNumber: appState.grinderNumber,
+                loginTime: appState.loginTime,
+                initialInventory: inventoryData
+            });
+            
+            // Request notification permission
+            requestNotificationPermission();
+            
+            // Show dashboard
+            document.getElementById('menuBtn').style.display = 'block';
+            updateDashboard();
+            startShiftTimer();
+            startReminderTimer();
+            showScreen('dashboardScreen');
+            
+            // Reset form
+            this.reset();
+        });
+
+        // Update Dashboard
+        function updateDashboard() {
+            document.getElementById('dashboardName').textContent = appState.baristaName;
+            document.getElementById('dashboardGrinder').textContent = appState.grinderNumber;
+            document.getElementById('dashboardLoginTime').textContent = 
+                new Date(appState.loginTime).toLocaleTimeString();
+            document.getElementById('reminderIntervalDisplay').textContent = appState.reminderInterval;
+        }
+
+        // Shift Timer
+        function startShiftTimer() {
+            if (appState.shiftTimer) clearInterval(appState.shiftTimer);
+            
+            appState.shiftTimer = setInterval(() => {
+                const now = new Date();
+                const login = new Date(appState.loginTime);
+                const diff = now - login;
+                
+                const hours = Math.floor(diff / 3600000);
+                const minutes = Math.floor((diff % 3600000) / 60000);
+                const seconds = Math.floor((diff % 60000) / 1000);
+                
+                document.getElementById('shiftTimer').textContent = 
+                    `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+            }, 1000);
+        }
+
+        function pad(num) {
+            return num.toString().padStart(2, '0');
+        }
+
+        // Reminder Timer
+        function startReminderTimer() {
+            if (appState.reminderTimer) clearInterval(appState.reminderTimer);
+            
+            const intervalMs = appState.reminderInterval * 60 * 60 * 1000;
+            
+            appState.reminderTimer = setInterval(() => {
+                showNotification();
+            }, intervalMs);
+        }
+
+        // Notification Permission
+        function requestNotificationPermission() {
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission();
+            }
+        }
+
+        // Show Notification
+        function showNotification() {
+            if ('Notification' in window && Notification.permission === 'granted') {
+                const notification = new Notification('⏰ Inventory Check Time!', {
+                    body: 'Time to check your coffee cart inventory',
+                    icon: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Ccircle cx="50" cy="50" r="50" fill="%236F4E37"/%3E%3Ctext x="50" y="65" font-size="50" text-anchor="middle" fill="white"%3E☕%3C/text%3E%3C/svg%3E',
+                    requireInteraction: true
+                });
+                
+                notification.onclick = function() {
+                    window.focus();
+                    openPeriodicCheck();
+                    notification.close();
+                };
+            }
+        }
+
+        // Open Periodic Check
+        function openPeriodicCheck() {
+            renderInventoryChecklist('periodicInventoryList');
+            showScreen('periodicCheckScreen');
+        }
+
+        // Periodic Check Form
+        document.getElementById('periodicCheckForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Collect inventory data
+            const inventoryData = {};
+            appState.inventoryItems.forEach((item, index) => {
+                const checkbox = document.getElementById(`item_${index}`);
+                inventoryData[item] = checkbox ? checkbox.checked : false;
+            });
+            
+            // Send to backend
+            sendToBackend('INVENTORY_CHECK', {
+                barista: appState.baristaName,
+                grinderNumber: appState.grinderNumber,
+                checkTime: new Date().toISOString(),
+                inventory: inventoryData
+            });
+            
+            showScreen('dashboardScreen');
+            this.reset();
+        });
+
+        // Menu Functions
+        function openMenu() {
+            document.getElementById('menuModal').classList.add('active');
+        }
+
+        function closeMenu() {
+            document.getElementById('menuModal').classList.remove('active');
+        }
+
+        function openSettings() {
+            closeMenu();
+            renderSettingsItems();
+            showScreen('settingsScreen');
+        }
+
+        function initiateLogout() {
+            closeMenu();
+            showScreen('logoutScreen');
+        }
+
+        // Logout Form
+        document.getElementById('logoutForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const enteredGrinder = document.getElementById('grinderNumberLogout').value.trim();
+            
+            if (enteredGrinder !== appState.grinderNumber) {
+                alert('❌ Grinder number does not match! Please try again.');
+                return;
+            }
+            
+            const logoutTime = new Date().toISOString();
+            
+            // Send logout data to backend
+            sendToBackend('LOGOUT', {
+                barista: appState.baristaName,
+                grinderNumber: appState.grinderNumber,
+                loginTime: appState.loginTime,
+                logoutTime: logoutTime
+            });
+            
+            // Clear timers
+            if (appState.reminderTimer) clearInterval(appState.reminderTimer);
+            if (appState.shiftTimer) clearInterval(appState.shiftTimer);
+            
+            // Reset state
+            appState.isLoggedIn = false;
+            appState.baristaName = '';
+            appState.grinderNumber = '';
+            appState.loginTime = null;
+            saveState();
+            
+            // Reset UI
+            document.getElementById('menuBtn').style.display = 'none';
+            document.getElementById('initialLoginForm').reset();
+            this.reset();
+            showScreen('initialLoginScreen');
+        });
+
+        // Settings - Tabs
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName + 'Tab').classList.add('active');
+        }
+
+        // Settings - Items
+        function renderSettingsItems() {
+            const container = document.getElementById('itemsList');
+            container.innerHTML = appState.inventoryItems.map((item, index) => `
+                <div class="item-row">
+                    <span>${item}</span>
+                    <button onclick="removeItem(${index})">Remove</button>
+                </div>
+            `).join('');
+        }
+
+        function addNewItem() {
+            const input = document.getElementById('newItemInput');
+            const newItem = input.value.trim();
+            
+            if (newItem && !appState.inventoryItems.includes(newItem)) {
+                appState.inventoryItems.push(newItem);
+                saveState();
+                renderSettingsItems();
+                input.value = '';
+            }
+        }
+
+        function removeItem(index) {
+            if (confirm('Remove this item from inventory checklist?')) {
+                appState.inventoryItems.splice(index, 1);
+                saveState();
+                renderSettingsItems();
+            }
+        }
+
+        // Settings - Reminder Interval
+        function updateReminderInterval() {
+            appState.reminderInterval = parseInt(document.getElementById('reminderInterval').value);
+            saveState();
+            
+            if (appState.isLoggedIn) {
+                startReminderTimer();
+                document.getElementById('reminderIntervalDisplay').textContent = appState.reminderInterval;
+            }
+        }
+
+        // Backend Communication
+        function sendToBackend(type, data) {
+            const payload = {
+                type: type,
+                timestamp: new Date().toISOString(),
+                data: data
+            };
+            
+            // Store locally for backup
+            const logs = JSON.parse(localStorage.getItem('pendingLogs') || '[]');
+            logs.push(payload);
+            localStorage.setItem('pendingLogs', JSON.stringify(logs));
+            
+            // Send to backend (will implement with Google Sheets API)
+            console.log('Sending to backend:', payload);
+            
+            // In production, replace with actual API call:
+            // fetch(BACKEND_URL, {
+            //     method: 'POST',
+            //     headers: { 'Content-Type': 'application/json' },
+            //     body: JSON.stringify(payload)
+            // });
+        }
+
+        // Service Worker for background notifications (PWA)
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('data:text/javascript;base64,c2VsZi5hZGRFdmVudExpc3RlbmVyKCdub3RpZmljYXRpb25jbGljaycsIGZ1bmN0aW9uKGV2ZW50KSB7CiAgZXZlbnQubm90aWZpY2F0aW9uLmNsb3NlKCk7CiAgZXZlbnQud2FpdFVudGlsKAogICAgY2xpZW50cy5vcGVuV2luZG93KCcvJykKICApOwp9KTs=')
+                .then(reg => console.log('Service Worker registered'))
+                .catch(err => console.log('Service Worker registration failed'));
+        }
+
+        // Generate and inject PWA manifest
+        const manifestData = {
+            "name": "Coffee Cart Attendance",
+            "short_name": "Coffee Cart",
+            "description": "Barista attendance and inventory tracking system",
+            "start_url": window.location.pathname,
+            "display": "standalone",
+            "background_color": "#ffffff",
+            "theme_color": "#6F4E37",
+            "orientation": "portrait",
+            "icons": [
+                {
+                    "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Ccircle cx='96' cy='96' r='96' fill='%236F4E37'/%3E%3Ctext x='96' y='130' font-size='100' text-anchor='middle' fill='white'%3E☕%3C/text%3E%3C/svg%3E",
+                    "sizes": "192x192",
+                    "type": "image/svg+xml",
+                    "purpose": "any maskable"
+                },
+                {
+                    "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Ccircle cx='256' cy='256' r='256' fill='%236F4E37'/%3E%3Ctext x='256' y='350' font-size='280' text-anchor='middle' fill='white'%3E☕%3C/text%3E%3C/svg%3E",
+                    "sizes": "512x512",
+                    "type": "image/svg+xml",
+                    "purpose": "any maskable"
+                }
+            ]
+        };
+
+        const manifestBlob = new Blob([JSON.stringify(manifestData)], { type: 'application/json' });
+        const manifestURL = URL.createObjectURL(manifestBlob);
+        document.getElementById('manifest-placeholder').setAttribute('href', manifestURL);
+
+        // PWA Install Prompt
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            
+            // Show install button/banner (you can customize this)
+            console.log('PWA install available');
+            
+            // Optionally show a custom install prompt after 3 seconds
+            setTimeout(() => {
+                if (deferredPrompt && !localStorage.getItem('pwaInstallDismissed')) {
+                    showInstallPrompt();
+                }
+            }, 3000);
+        });
+
+        function showInstallPrompt() {
+            const shouldInstall = confirm('📱 Install Coffee Cart App?\n\nAdd this app to your home screen for:\n✅ Quick access\n✅ Push notifications\n✅ Works offline\n✅ Looks like a real app');
+            
+            if (shouldInstall && deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('User accepted the install prompt');
+                    } else {
+                        console.log('User dismissed the install prompt');
+                        localStorage.setItem('pwaInstallDismissed', 'true');
+                    }
+                    deferredPrompt = null;
+                });
+            } else {
+                localStorage.setItem('pwaInstallDismissed', 'true');
+            }
+        }
+
+        // For iOS - Show custom instructions
+        function isIOS() {
+            return /iPhone|iPad|iPod/.test(navigator.userAgent) && !window.MSStream;
+        }
+
+        function isInStandaloneMode() {
+            return ('standalone' in window.navigator) && (window.navigator.standalone);
+        }
+
+        // Show iOS install instructions if not installed
+        if (isIOS() && !isInStandaloneMode() && !localStorage.getItem('iosInstallShown')) {
+            setTimeout(() => {
+                const shouldShow = confirm('📱 Install on iPhone?\n\nFor best experience:\n\n1. Tap the Share button (⬆️)\n2. Scroll down\n3. Tap "Add to Home Screen"\n4. Tap "Add"\n\n👉 Want to see these instructions?');
+                
+                if (shouldShow) {
+                    alert('iOS Installation Steps:\n\n1. Tap Share button at bottom (square with arrow ⬆️)\n2. Scroll down in the menu\n3. Tap "Add to Home Screen" 📱\n4. Tap "Add" in top right\n5. App will appear on your home screen!\n\n✅ You\'ll get notifications and it works like a real app!');
+                }
+                localStorage.setItem('iosInstallShown', 'true');
+            }, 2000);
+        }
+
+        // Initialize on load
+        window.addEventListener('load', () => {
+            loadState();
+            document.getElementById('reminderInterval').value = appState.reminderInterval;
+        });
+
+        // Keep app alive when minimized
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden && appState.isLoggedIn) {
+                // Refresh timers when app comes back to foreground
+                startShiftTimer();
+            }
+        });
+    </script>
+</body>
+</html>
